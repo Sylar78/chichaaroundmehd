@@ -1,13 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { ActivityIndicator, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Bouton } from '@/components/Bouton';
 import { PhotoLieu } from '@/components/PhotoLieu';
 import { useLieu } from '@/hooks/useLieux';
+import { signalerAvis, type MotifSignalement } from '@/lib/donnees';
 import { estOuvert, formatHeure, formatNiveauPrix, formatNote, formatPrix, horaireDuJour, nomJour } from '@/lib/format';
 import { useFavoris } from '@/state/favoris';
+import { useSession } from '@/state/session';
 import { colors, font, radius, shadow } from '@/theme';
 
 /** Écran 3 : fiche détaillée d'un lieu. */
@@ -16,6 +18,25 @@ export default function EcranFiche() {
   const { lieu, avis } = useLieu(id);
   const insets = useSafeAreaInsets();
   const { estFavori, basculerFavori } = useFavoris();
+  const { session } = useSession();
+
+  const signaler = (avisId: string) => {
+    if (!session) {
+      router.push('/connexion');
+      return;
+    }
+    const envoyer = (motif: MotifSignalement) =>
+      signalerAvis(avisId, session.user.id, motif)
+        .then((nouveau) =>
+          Alert.alert(nouveau ? 'Merci' : 'Déjà signalé', nouveau ? 'Notre équipe va vérifier cet avis.' : 'Vous avez déjà signalé cet avis.'),
+        )
+        .catch((e: Error) => Alert.alert('Signalement impossible', e.message));
+    Alert.alert('Signaler cet avis', 'Pourquoi ?', [
+      { text: 'Faux avis', onPress: () => envoyer('faux_avis') },
+      { text: 'Contenu inapproprié', onPress: () => envoyer('inapproprie') },
+      { text: 'Annuler', style: 'cancel' },
+    ]);
+  };
 
   if (lieu === undefined) {
     return (
@@ -143,6 +164,9 @@ export default function EcranFiche() {
                 </View>
                 <Text style={[styles.texte, { fontWeight: font.bold }]}>{a.note}/5</Text>
                 <Text style={styles.texte}>{a.commentaire}</Text>
+                <Pressable accessibilityRole="button" onPress={() => signaler(a.id)} style={styles.signaler}>
+                  <Text style={styles.signalerTexte}>Signaler</Text>
+                </Pressable>
               </View>
             ))}
             <Bouton
@@ -198,6 +222,8 @@ const styles = StyleSheet.create({
   boite: { borderRadius: radius.lg, backgroundColor: colors.surfaceSoft, paddingHorizontal: 14 },
   ligneBoite: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 12 },
   separateur: { borderBottomWidth: 1, borderBottomColor: '#E4E4E4' },
+  signaler: { alignSelf: 'flex-start', minHeight: 32, justifyContent: 'center' },
+  signalerTexte: { fontSize: 13, color: colors.inkMuted, textDecorationLine: 'underline' },
   ligneHoraire: { flexDirection: 'row', justifyContent: 'space-between' },
   boutonRond: {
     position: 'absolute',

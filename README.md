@@ -74,7 +74,7 @@ Les maquettes de référence sont dans l'artifact Claude Design « Chicha Around
 - `avis` : note de 1 à 5 et commentaire, avec un statut de modération (`en_attente`, `publie`, `rejete`).
 - `favoris` : lieux favoris de chaque membre. Les favoris sont aussi gardés sur le téléphone et envoyés au compte à la connexion.
 
-Contre les faux avis : un seul avis par compte et par lieu, compte majeur obligatoire, publication seulement après modération, et la note moyenne ne compte que les avis publiés. Les règles d'accès (RLS) sont activées sur toutes les tables.
+Contre les faux avis : un seul avis par compte et par lieu, signalement par les membres (à 3 signalements, l'avis repasse en modération), compte majeur obligatoire, publication seulement après modération, et la note moyenne ne compte que les avis publiés. Les règles d'accès (RLS) sont activées sur toutes les tables.
 
 Pour nommer un modérateur, dans l'éditeur SQL :
 
@@ -88,8 +88,7 @@ L'écran « Modération des avis » apparaît alors dans son profil.
 ## Prochaines étapes
 
 1. Photos des lieux (Supabase Storage) et saisie des prix détaillés.
-2. Signalement d'un avis par les membres.
-3. Passage à Mapbox si on veut une carte personnalisée (build de développement EAS).
+2. Passage à Mapbox si on veut une carte personnalisée (build de développement EAS).
 
 ## Points d'attention
 
@@ -100,6 +99,6 @@ L'écran « Modération des avis » apparaît alors dans son profil.
 
 ```bash
 npm run typecheck
-npm test                              # tests du script d'import
+npm test                              # tests de l'import Google Places et des horaires
 npx expo export --platform android   # vérifie que le bundle se construit
 ```

@@ -118,3 +118,16 @@ export async function changerStatutAvis(id: string, statut: 'publie' | 'rejete')
   const { error } = await supabase.from('avis').update({ statut }).eq('id', id);
   if (error) throw error;
 }
+
+export type MotifSignalement = 'faux_avis' | 'inapproprie';
+
+/** Signale un avis. Renvoie `false` si le membre l'avait déjà signalé. */
+export async function signalerAvis(avisId: string, utilisateurId: string, motif: MotifSignalement): Promise<boolean> {
+  if (!supabase) return true;
+  const { error } = await supabase
+    .from('signalements_avis')
+    .insert({ avis_id: avisId, utilisateur_id: utilisateurId, motif });
+  if (error?.code === '23505') return false;
+  if (error) throw error;
+  return true;
+}
