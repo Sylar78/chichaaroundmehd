@@ -42,3 +42,7 @@ yarn-error.*
 
 # Variables d’environnement locales
 .env
+
+# Clés de publication, écrites par le workflow de déploiement, jamais commitées
+/asc-api-key.p8
+/google-service-account.json

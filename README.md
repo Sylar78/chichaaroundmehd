@@ -85,6 +85,10 @@ where id = (select id from auth.users where email = 'vous@exemple.fr');
 
 L'écran « Modération des avis » apparaît alors dans son profil.
 
+## Déploiement
+
+Le workflow GitHub Actions `Déploiement` construit l'app avec EAS et l'envoie à TestFlight (iOS) et à Google Play, piste « Test interne » (Android). La mise en place des comptes et des secrets est détaillée dans [docs/DEPLOIEMENT.md](docs/DEPLOIEMENT.md).
+
 ## Prochaines étapes
 
 1. Photos des lieux (Supabase Storage) et saisie des prix détaillés.
