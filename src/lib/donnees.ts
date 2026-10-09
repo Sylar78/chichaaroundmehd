@@ -68,3 +68,53 @@ export async function chargerAvis(lieuId: string): Promise<Avis[]> {
     };
   });
 }
+
+export async function chargerLieuxParIds(ids: string[]): Promise<Lieu[]> {
+  if (ids.length === 0) return [];
+  if (!supabase) return lieuxFactices.filter((l) => ids.includes(l.id));
+  const { data, error } = await supabase.from('lieux').select(COLONNES_LIEU).in('id', ids);
+  if (error) throw error;
+  return (data ?? []).map(normaliserLieu);
+}
+
+export type AvisAvecLieu = Avis & { nom_lieu: string };
+
+function nomLieu(brut: unknown): string {
+  const l = brut as { nom: string } | { nom: string }[] | null;
+  return (Array.isArray(l) ? l[0]?.nom : l?.nom) ?? 'Lieu supprimé';
+}
+
+/** Tous les avis du membre, quel que soit leur statut de modération. */
+export async function chargerMesAvis(utilisateurId: string): Promise<AvisAvecLieu[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from('avis')
+    .select('id, lieu_id, utilisateur_id, note, commentaire, statut, cree_le, lieux(nom)')
+    .eq('utilisateur_id', utilisateurId)
+    .order('cree_le', { ascending: false });
+  if (error) throw error;
+  return (data ?? []).map((a) => ({ ...(a as unknown as Avis), auteur: 'Moi', nom_lieu: nomLieu(a.lieux) }));
+}
+
+/** Avis en attente de modération, du plus ancien au plus récent (réservé aux modérateurs par la RLS). */
+export async function chargerAvisEnAttente(): Promise<AvisAvecLieu[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from('avis')
+    .select('id, lieu_id, utilisateur_id, note, commentaire, statut, cree_le, lieux(nom), utilisateurs(pseudo)')
+    .eq('statut', 'en_attente')
+    .order('cree_le', { ascending: true })
+    .limit(50);
+  if (error) throw error;
+  return (data ?? []).map((a) => {
+    const profil = a.utilisateurs as { pseudo: string } | { pseudo: string }[] | null;
+    const pseudo = Array.isArray(profil) ? profil[0]?.pseudo : profil?.pseudo;
+    return { ...(a as unknown as Avis), auteur: pseudo ?? 'Membre', nom_lieu: nomLieu(a.lieux) };
+  });
+}
+
+export async function changerStatutAvis(id: string, statut: 'publie' | 'rejete'): Promise<void> {
+  if (!supabase) return;
+  const { error } = await supabase.from('avis').update({ statut }).eq('id', id);
+  if (error) throw error;
+}

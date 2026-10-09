@@ -7,7 +7,7 @@ import { Bouton } from '@/components/Bouton';
 import { PhotoLieu } from '@/components/PhotoLieu';
 import { useLieu } from '@/hooks/useLieux';
 import { estOuvert, formatHeure, formatNiveauPrix, formatNote, formatPrix, horaireDuJour, nomJour } from '@/lib/format';
-import { useFiltres } from '@/state/filtres';
+import { useFavoris } from '@/state/favoris';
 import { colors, font, radius, shadow } from '@/theme';
 
 /** Écran 3 : fiche détaillée d'un lieu. */
@@ -15,7 +15,7 @@ export default function EcranFiche() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { lieu, avis } = useLieu(id);
   const insets = useSafeAreaInsets();
-  const { favoris, basculerFavori } = useFiltres();
+  const { estFavori, basculerFavori } = useFavoris();
 
   if (lieu === undefined) {
     return (
@@ -34,7 +34,7 @@ export default function EcranFiche() {
     );
   }
 
-  const favori = favoris.includes(lieu.id);
+  const favori = estFavori(lieu.id);
   const ouvert = estOuvert(lieu.horaires);
   const aujourdhui = horaireDuJour(lieu.horaires);
   const jourCourant = new Date().getDay();

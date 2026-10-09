@@ -29,8 +29,6 @@ type FiltresContexte = {
   setFiltres: (f: Filtres) => void;
   tri: Tri;
   setTri: (t: Tri) => void;
-  favoris: string[];
-  basculerFavori: (lieuId: string) => void;
 };
 
 const Contexte = createContext<FiltresContexte | null>(null);
@@ -38,8 +36,6 @@ const Contexte = createContext<FiltresContexte | null>(null);
 export function FiltresProvider({ children }: { children: ReactNode }) {
   const [filtres, setFiltres] = useState<Filtres>(filtresParDefaut);
   const [tri, setTri] = useState<Tri>('distance');
-  // Favoris en mémoire pour l'instant ; ils iront dans Supabase avec l'authentification.
-  const [favoris, setFavoris] = useState<string[]>([]);
 
   const valeur = useMemo<FiltresContexte>(
     () => ({
@@ -47,11 +43,8 @@ export function FiltresProvider({ children }: { children: ReactNode }) {
       setFiltres,
       tri,
       setTri,
-      favoris,
-      basculerFavori: (id) =>
-        setFavoris((f) => (f.includes(id) ? f.filter((x) => x !== id) : [...f, id])),
     }),
-    [filtres, tri, favoris],
+    [filtres, tri],
   );
 
   return <Contexte.Provider value={valeur}>{children}</Contexte.Provider>;

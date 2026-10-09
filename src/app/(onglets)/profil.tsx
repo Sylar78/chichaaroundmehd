@@ -1,12 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Bouton } from '@/components/Bouton';
 import { supabase } from '@/lib/supabase';
-import { useFiltres } from '@/state/filtres';
+import { useFavoris } from '@/state/favoris';
+import { useSession } from '@/state/session';
 import { colors, font, radius } from '@/theme';
 
 const REGLAGES: { label: string; icone: keyof typeof Ionicons.glyphMap }[] = [
@@ -19,15 +19,9 @@ const REGLAGES: { label: string; icone: keyof typeof Ionicons.glyphMap }[] = [
 /** Écran 6 : profil, favoris et réglages. */
 export default function EcranProfil() {
   const insets = useSafeAreaInsets();
-  const { favoris } = useFiltres();
-  const [email, setEmail] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!supabase) return;
-    supabase.auth.getSession().then(({ data }) => setEmail(data.session?.user.email ?? null));
-    const { data } = supabase.auth.onAuthStateChange((_e, session) => setEmail(session?.user.email ?? null));
-    return () => data.subscription.unsubscribe();
-  }, []);
+  const { favoris } = useFavoris();
+  const { session, estModerateur } = useSession();
+  const email = session?.user.email ?? null;
 
   return (
     <ScrollView
@@ -50,21 +44,27 @@ export default function EcranProfil() {
       )}
 
       <View style={styles.tuiles}>
-        <View style={styles.tuile}>
+        <Pressable accessibilityRole="button" onPress={() => router.push('/favoris')} style={styles.tuile}>
           <Ionicons name="heart-outline" size={24} color={colors.ink} />
           <Text style={styles.tuileTitre}>Favoris</Text>
           <Text style={styles.tuileSous}>
             {favoris.length} lieu{favoris.length > 1 ? 'x' : ''}
           </Text>
-        </View>
-        <View style={styles.tuile}>
+        </Pressable>
+        <Pressable accessibilityRole="button" onPress={() => router.push('/mes-avis')} style={styles.tuile}>
           <Ionicons name="star-outline" size={24} color={colors.ink} />
           <Text style={styles.tuileTitre}>Mes avis</Text>
-          <Text style={styles.tuileSous}>Bientôt</Text>
-        </View>
+          <Text style={styles.tuileSous}>Suivre leur vérification</Text>
+        </Pressable>
       </View>
 
       <View>
+        {estModerateur && (
+          <Pressable accessibilityRole="button" style={styles.ligne} onPress={() => router.push('/moderation')}>
+            <Ionicons name="shield-checkmark-outline" size={22} color={colors.ink} />
+            <Text style={styles.ligneTexte}>Modération des avis</Text>
+          </Pressable>
+        )}
         {REGLAGES.map((r) => (
           <Pressable key={r.label} accessibilityRole="button" style={styles.ligne}>
             <Ionicons name={r.icone} size={22} color={colors.ink} />

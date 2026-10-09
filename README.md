@@ -27,7 +27,7 @@ Quand Supabase est configuré, l'app lit les lieux de la table `lieux` autour de
 ### Brancher Supabase
 
 1. Créer un projet sur [supabase.com](https://supabase.com).
-2. Exécuter `supabase/migrations/0001_init.sql` dans l'éditeur SQL du projet.
+2. Exécuter dans l'ordre les fichiers de `supabase/migrations/` dans l'éditeur SQL du projet.
 3. Copier `.env.example` en `.env` et renseigner l'URL et la clé `anon`.
 4. Relancer `npx expo start`.
 
@@ -61,21 +61,35 @@ Les maquettes de référence sont dans l'artifact Claude Design « Chicha Around
 | Filtres (modale) | `src/app/filtres.tsx` |
 | Déposer un avis (modale) | `src/app/avis/[id].tsx` |
 | Connexion / inscription par e-mail | `src/app/connexion.tsx` |
+| Favoris | `src/app/favoris.tsx` |
+| Mes avis et leur statut de vérification | `src/app/mes-avis.tsx` |
+| Modération des avis (modérateurs seulement) | `src/app/moderation.tsx` |
 
 ## Base de données
 
-`supabase/migrations/0001_init.sql` crée :
+`supabase/migrations/` crée :
 
 - `utilisateurs` : profil public, créé automatiquement à l'inscription, avec la confirmation de majorité et un rôle (`membre` ou `moderateur`).
 - `lieux` : coordonnées, niveau de prix, horaires et prix (JSON), équipements, note moyenne recalculée automatiquement.
 - `avis` : note de 1 à 5 et commentaire, avec un statut de modération (`en_attente`, `publie`, `rejete`).
+- `favoris` : lieux favoris de chaque membre. Les favoris sont aussi gardés sur le téléphone et envoyés au compte à la connexion.
 
-Contre les faux avis : un seul avis par compte et par lieu, compte majeur obligatoire, publication seulement après modération, et la note moyenne ne compte que les avis publiés. Les règles d'accès (RLS) sont activées sur les trois tables.
+Contre les faux avis : un seul avis par compte et par lieu, compte majeur obligatoire, publication seulement après modération, et la note moyenne ne compte que les avis publiés. Les règles d'accès (RLS) sont activées sur toutes les tables.
+
+Pour nommer un modérateur, dans l'éditeur SQL :
+
+```sql
+update public.utilisateurs set role = 'moderateur'
+where id = (select id from auth.users where email = 'vous@exemple.fr');
+```
+
+L'écran « Modération des avis » apparaît alors dans son profil.
 
 ## Prochaines étapes
 
-1. Stocker les favoris et les photos dans Supabase.
-2. Ajouter un écran de modération pour les avis en attente.
+1. Photos des lieux (Supabase Storage) et saisie des prix détaillés.
+2. Signalement d'un avis par les membres.
+3. Passage à Mapbox si on veut une carte personnalisée (build de développement EAS).
 
 ## Points d'attention
 
