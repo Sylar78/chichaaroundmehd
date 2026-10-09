@@ -1,0 +1,114 @@
+name: Déploiement
+
+# Construit l'app dans le cloud EAS et l'envoie à TestFlight (iOS) et à Google Play, piste « interne » (Android).
+#  - À la main : onglet Actions > Déploiement > Run workflow.
+#  - Automatiquement : en poussant un tag de version, par exemple `git tag v1.0.0 && git push --tags`.
+
+on:
+  workflow_dispatch:
+    inputs:
+      plateforme:
+        description: Plateforme à construire
+        type: choice
+        options: [all, ios, android]
+        default: all
+      profil:
+        description: preview = APK et build interne ; production = TestFlight et Google Play
+        type: choice
+        options: [production, preview]
+        default: production
+  push:
+    tags: ['v*']
+
+concurrency:
+  group: deploiement-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verifier:
+    runs-on: ubuntu-latest
+    outputs:
+      plateformes: ${{ steps.choix.outputs.plateformes }}
+    steps:
+      # Un tag construit les deux plateformes ; un lancement manuel suit le choix de l'utilisateur.
+      - id: choix
+        env:
+          CHOIX: ${{ inputs.plateforme || 'all' }}
+        run: |
+          case "$CHOIX" in
+            ios) echo 'plateformes=["ios"]' >> "$GITHUB_OUTPUT" ;;
+            android) echo 'plateformes=["android"]' >> "$GITHUB_OUTPUT" ;;
+            *) echo 'plateformes=["ios","android"]' >> "$GITHUB_OUTPUT" ;;
+          esac
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+
+  construire:
+    needs: verifier
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        plateforme: ${{ fromJSON(needs.verifier.outputs.plateformes) }}
+    env:
+      PROFIL: ${{ inputs.profil || 'production' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      - name: Vérifier le jeton Expo
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "::error::Le secret EXPO_TOKEN est absent. Voir docs/DEPLOIEMENT.md, étape 1."
+            exit 1
+          fi
+
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      # Les clés de publication sont écrites dans des fichiers que eas.json référence. Ils sont ignorés par git.
+      - name: Clé App Store Connect (iOS)
+        if: matrix.plateforme == 'ios' && env.PROFIL == 'production'
+        env:
+          ASC_API_KEY: ${{ secrets.ASC_API_KEY_P8 }}
+        run: |
+          if [ -z "$ASC_API_KEY" ]; then
+            echo "::error::Le secret ASC_API_KEY_P8 est absent. Voir docs/DEPLOIEMENT.md, étape 3."
+            exit 1
+          fi
+          printf '%s\n' "$ASC_API_KEY" > asc-api-key.p8
+
+      - name: Clé du compte de service Google Play (Android)
+        if: matrix.plateforme == 'android' && env.PROFIL == 'production'
+        env:
+          GOOGLE_KEY: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          if [ -z "$GOOGLE_KEY" ]; then
+            echo "::error::Le secret GOOGLE_PLAY_SERVICE_ACCOUNT_JSON est absent. Voir docs/DEPLOIEMENT.md, étape 4."
+            exit 1
+          fi
+          printf '%s' "$GOOGLE_KEY" > google-service-account.json
+
+      # --no-wait : la construction continue dans le cloud EAS sans bloquer ce job.
+      # --auto-submit : à la fin de la construction, EAS envoie le binaire à TestFlight ou à Google Play.
+      - name: Lancer la construction
+        run: |
+          if [ "$PROFIL" = "production" ]; then
+            npx eas-cli build --platform ${{ matrix.plateforme }} --profile production --non-interactive --no-wait --auto-submit
+          else
+            npx eas-cli build --platform ${{ matrix.plateforme }} --profile preview --non-interactive --no-wait
+          fi
