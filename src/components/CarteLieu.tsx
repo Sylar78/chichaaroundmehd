@@ -22,7 +22,7 @@ export function CarteLieu({ lieu, variante = 'grande' }: Props) {
         accessibilityRole="link"
         accessibilityLabel={`${lieu.nom}, note ${formatNote(lieu.note_moyenne)}, à ${formatDistance(lieu.distance)}`}
         style={compacte ? styles.compacte : styles.grande}>
-        <PhotoLieu lieu={lieu} style={compacte ? styles.vignette : styles.photo} />
+        <PhotoLieu lieu={lieu} court={compacte} style={compacte ? styles.vignette : styles.photo} />
         <View style={styles.infos}>
           <View style={styles.ligneTitre}>
             <Text style={styles.nom} numberOfLines={1}>

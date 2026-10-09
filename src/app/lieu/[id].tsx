@@ -176,7 +176,7 @@ export default function EcranFiche() {
 const styles = StyleSheet.create({
   ecran: { flex: 1, backgroundColor: colors.background },
   introuvable: { flex: 1, padding: 16, gap: 16, backgroundColor: colors.background },
-  photo: { height: 300 },
+  photo: { height: 300, paddingBottom: 40 },
   corps: {
     marginTop: -24,
     paddingTop: 22,

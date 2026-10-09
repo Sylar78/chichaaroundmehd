@@ -1,11 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Link, router } from 'expo-router';
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import MapView, { Marker } from 'react-native-maps';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CarteLieu } from '@/components/CarteLieu';
+import { CarteMap } from '@/components/CarteMap';
 import { Pastille } from '@/components/Pastille';
 import { useLieux } from '@/hooks/useLieux';
 import { useFiltres } from '@/state/filtres';
@@ -14,11 +14,11 @@ import { colors, font, radius, shadow } from '@/theme';
 /** Écran 1 : carte des lieux autour de l'utilisateur. */
 export default function EcranCarte() {
   const insets = useSafeAreaInsets();
-  const carte = useRef<MapView>(null);
   const { lieux, position } = useLieux();
   const { filtres, setFiltres, tri, setTri } = useFiltres();
   const [recherche, setRecherche] = useState('');
   const [selectionId, setSelectionId] = useState<string | null>(null);
+  const [recentrerCle, setRecentrerCle] = useState(0);
 
   const visibles = useMemo(
     () => lieux.filter((l) => l.nom.toLowerCase().includes(recherche.trim().toLowerCase())),
@@ -26,33 +26,15 @@ export default function EcranCarte() {
   );
   const selection = visibles.find((l) => l.id === selectionId) ?? visibles[0];
 
-  const recentrer = () =>
-    carte.current?.animateToRegion({ ...position, latitudeDelta: 0.03, longitudeDelta: 0.03 }, 400);
-
   return (
     <View style={styles.ecran}>
-      <MapView
-        ref={carte}
-        style={StyleSheet.absoluteFill}
-        initialRegion={{ ...position, latitudeDelta: 0.03, longitudeDelta: 0.03 }}
-        showsUserLocation
-        showsMyLocationButton={false}>
-        {visibles.map((l) => {
-          const actif = l.id === selection?.id;
-          return (
-            <Marker
-              key={l.id}
-              coordinate={{ latitude: l.latitude, longitude: l.longitude }}
-              title={l.nom}
-              onPress={() => setSelectionId(l.id)}
-              tracksViewChanges={false}>
-              <View style={[styles.marqueur, { backgroundColor: actif ? colors.accent : colors.ink }, actif && styles.marqueurActif]}>
-                <Ionicons name="cafe-outline" size={18} color={colors.white} />
-              </View>
-            </Marker>
-          );
-        })}
-      </MapView>
+      <CarteMap
+        lieux={visibles}
+        position={position}
+        selectionId={selection?.id}
+        onSelect={setSelectionId}
+        recentrerCle={recentrerCle}
+      />
 
       <View style={[styles.haut, { top: insets.top + 8 }]}>
         <View style={styles.recherche}>
@@ -80,7 +62,7 @@ export default function EcranCarte() {
         </ScrollView>
       </View>
 
-      <Pressable accessibilityRole="button" accessibilityLabel="Me recentrer" onPress={recentrer} style={styles.recentrer}>
+      <Pressable accessibilityRole="button" accessibilityLabel="Me recentrer" onPress={() => setRecentrerCle((c) => c + 1)} style={styles.recentrer}>
         <Ionicons name="navigate-outline" size={22} color={colors.ink} />
       </Pressable>
 
@@ -119,16 +101,6 @@ const styles = StyleSheet.create({
   },
   champ: { flex: 1, fontSize: 16, color: colors.ink },
   pastilles: { gap: 8, paddingVertical: 4 },
-  marqueur: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    borderWidth: 3,
-    borderColor: colors.white,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  marqueurActif: { transform: [{ scale: 1.15 }] },
   recentrer: {
     position: 'absolute',
     right: 16,
