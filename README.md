@@ -22,7 +22,7 @@ npx expo start
 
 Scanner le QR code avec l'app **Expo Go** (iOS ou Android).
 
-Sans configuration Supabase, l'app tourne avec les 4 lieux factices de `src/data/lieux.ts`, placés dans Paris 11e. Si la localisation est refusée, la carte se centre sur Paris 11e.
+Quand Supabase est configuré, l'app lit les lieux de la table `lieux` autour de la position. Sinon, elle tourne avec les 4 lieux factices de `src/data/lieux.ts`, placés dans Paris 11e. Si la localisation est refusée, la carte se centre sur Paris 11e.
 
 ### Brancher Supabase
 
@@ -30,6 +30,23 @@ Sans configuration Supabase, l'app tourne avec les 4 lieux factices de `src/data
 2. Exécuter `supabase/migrations/0001_init.sql` dans l'éditeur SQL du projet.
 3. Copier `.env.example` en `.env` et renseigner l'URL et la clé `anon`.
 4. Relancer `npx expo start`.
+
+### Remplir la base avec Google Places
+
+Le script `scripts/import-google-places.mjs` cherche les bars à chicha d'une zone avec Places API (New) et les enregistre dans la table `lieux`. Il se relance sans créer de doublons (clé `google_place_id`) et ne touche pas aux prix, photos et notes déjà en base.
+
+1. Dans Google Cloud, activer **Places API (New)** et créer une clé (restreinte à cette API).
+2. Renseigner `GOOGLE_PLACES_API_KEY`, `SUPABASE_URL` et `SUPABASE_SERVICE_ROLE_KEY` dans `.env`.
+3. Essayer sans rien écrire, puis importer :
+
+```bash
+npm run import:places -- --lat 48.8606 --lng 2.3776 --rayon 5 --dry-run
+npm run import:places -- --lat 48.8606 --lng 2.3776 --rayon 5
+```
+
+Le script récupère le nom, l'adresse, la position, le téléphone, le niveau de prix et les horaires. Les prix détaillés et les photos restent à saisir. Chaque requête Google est facturée : 3 recherches de 1 à 3 pages par lancement.
+
+Les conditions d'utilisation de Google Maps Platform limitent le stockage durable des données Places (seul l'identifiant `place_id` peut être conservé sans limite). Avant une mise en production, vérifier ces conditions et prévoir de relancer l'import régulièrement ou de compléter les fiches avec des données propres.
 
 ## Écrans
 
@@ -57,10 +74,8 @@ Contre les faux avis : un seul avis par compte et par lieu, compte majeur obliga
 
 ## Prochaines étapes
 
-1. Charger les lieux depuis Supabase au lieu des données factices (requête par zone autour de la position).
-2. Amorcer la base de lieux avec Google Places API (script côté serveur, pour protéger la clé).
-3. Stocker les favoris et les photos dans Supabase.
-4. Ajouter un écran de modération pour les avis en attente.
+1. Stocker les favoris et les photos dans Supabase.
+2. Ajouter un écran de modération pour les avis en attente.
 
 ## Points d'attention
 
@@ -71,5 +86,6 @@ Contre les faux avis : un seul avis par compte et par lieu, compte majeur obliga
 
 ```bash
 npm run typecheck
+npm test                              # tests du script d'import
 npx expo export --platform android   # vérifie que le bundle se construit
 ```

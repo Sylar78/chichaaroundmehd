@@ -15,7 +15,7 @@ const LONGUEUR_MIN = 20;
 /** Écran 5 : dépôt d'un avis (modale). L'avis part en modération avant publication. */
 export default function EcranAvis() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const lieu = useLieu(id);
+  const { lieu } = useLieu(id);
   const insets = useSafeAreaInsets();
   const [note, setNote] = useState(0);
   const [commentaire, setCommentaire] = useState('');

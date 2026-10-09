@@ -1,11 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { Linking, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Bouton } from '@/components/Bouton';
 import { PhotoLieu } from '@/components/PhotoLieu';
-import { avisFactices } from '@/data/lieux';
 import { useLieu } from '@/hooks/useLieux';
 import { estOuvert, formatHeure, formatNiveauPrix, formatNote, formatPrix, horaireDuJour, nomJour } from '@/lib/format';
 import { useFiltres } from '@/state/filtres';
@@ -14,9 +13,17 @@ import { colors, font, radius, shadow } from '@/theme';
 /** Écran 3 : fiche détaillée d'un lieu. */
 export default function EcranFiche() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const lieu = useLieu(id);
+  const { lieu, avis } = useLieu(id);
   const insets = useSafeAreaInsets();
   const { favoris, basculerFavori } = useFiltres();
+
+  if (lieu === undefined) {
+    return (
+      <View style={[styles.introuvable, { paddingTop: insets.top + 80 }]}>
+        <ActivityIndicator color={colors.ink} />
+      </View>
+    );
+  }
 
   if (!lieu) {
     return (
@@ -30,7 +37,6 @@ export default function EcranFiche() {
   const favori = favoris.includes(lieu.id);
   const ouvert = estOuvert(lieu.horaires);
   const aujourdhui = horaireDuJour(lieu.horaires);
-  const avis = avisFactices.filter((a) => a.lieu_id === lieu.id && a.statut === 'publie');
   const jourCourant = new Date().getDay();
 
   const itineraire = () => {
@@ -85,7 +91,8 @@ export default function EcranFiche() {
 
           <View style={styles.section}>
             <Text style={styles.sectionTitre}>Prix</Text>
-            <View style={styles.boite}>
+            {lieu.prix.length === 0 && <Text style={styles.muet}>Prix non renseignés pour l’instant.</Text>}
+            <View style={[styles.boite, lieu.prix.length === 0 && { display: 'none' }]}>
               {lieu.prix.map((p, i) => (
                 <View key={p.libelle} style={[styles.ligneBoite, i < lieu.prix.length - 1 && styles.separateur]}>
                   <Text style={styles.texte}>{p.libelle}</Text>
@@ -97,7 +104,8 @@ export default function EcranFiche() {
 
           <View style={styles.section}>
             <Text style={styles.sectionTitre}>Horaires</Text>
-            {[1, 2, 3, 4, 5, 6, 0].map((jour) => {
+            {lieu.horaires.length === 0 && <Text style={styles.muet}>Horaires non renseignés.</Text>}
+            {lieu.horaires.length > 0 && [1, 2, 3, 4, 5, 6, 0].map((jour) => {
               const h = lieu.horaires.find((x) => x.jour === jour);
               const gras = jour === jourCourant ? { fontWeight: font.bold, color: colors.ink } : null;
               return (

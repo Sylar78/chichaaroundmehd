@@ -30,7 +30,9 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "test": "node --test",
+    "import:places": "node --env-file=.env scripts/import-google-places.mjs"
   },
   "private": true
 }
