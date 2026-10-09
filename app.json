@@ -1,0 +1,43 @@
+{
+  "expo": {
+    "name": "Chicha Around Me",
+    "slug": "chicha-around-me",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.chichaaroundme.app",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Chicha Around Me utilise votre position pour afficher les lieux autour de vous."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#111111",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "package": "com.chichaaroundme.app"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Chicha Around Me utilise votre position pour afficher les lieux autour de vous."
+        }
+      ]
+    ],
+    "scheme": "chichaaroundme",
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
