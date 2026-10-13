@@ -38,6 +38,11 @@
     "scheme": "chichaaroundme",
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "b701dd7a-f573-4a17-b7a4-19a312a26202"
+      }
     }
   }
 }
