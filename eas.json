@@ -23,10 +23,10 @@
   "submit": {
     "production": {
       "ios": {
-        "ascAppId": "REMPLACER_PAR_L_ID_APP_STORE_CONNECT",
+        "ascAppId": "6833533670",
         "ascApiKeyPath": "./asc-api-key.p8",
-        "ascApiKeyIssuerId": "REMPLACER_PAR_L_ISSUER_ID",
-        "ascApiKeyId": "REMPLACER_PAR_L_KEY_ID"
+        "ascApiKeyIssuerId": "82857273-d645-4994-9de7-d2e34af7e6a4",
+        "ascApiKeyId": "4N9T2XSW3Q"
       },
       "android": {
         "serviceAccountKeyPath": "./google-service-account.json",
