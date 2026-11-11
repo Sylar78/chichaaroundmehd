@@ -4,6 +4,7 @@ import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CarteLieu } from '@/components/CarteLieu';
+import { MessageVide } from '@/components/MessageVide';
 import { Pastille } from '@/components/Pastille';
 import { useLieux } from '@/hooks/useLieux';
 import { useFiltres, type Tri } from '@/state/filtres';
@@ -18,8 +19,8 @@ const TRIS: { id: Tri; label: string }[] = [
 /** Écran 2 : liste triable des lieux. */
 export default function EcranListe() {
   const insets = useSafeAreaInsets();
-  const { lieux } = useLieux();
-  const { tri, setTri } = useFiltres();
+  const { lieux, position, erreur, nbRecus } = useLieux();
+  const { filtres, tri, setTri } = useFiltres();
 
   return (
     <FlatList
@@ -54,7 +55,9 @@ export default function EcranListe() {
           </View>
         </View>
       }
-      ListEmptyComponent={<Text style={styles.vide}>Aucun lieu ne correspond à vos filtres.</Text>}
+      ListEmptyComponent={
+        <MessageVide erreur={erreur} nbRecus={nbRecus} distanceMaxKm={filtres.distanceMaxKm} position={position} />
+      }
     />
   );
 }

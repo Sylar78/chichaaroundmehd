@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CarteLieu } from '@/components/CarteLieu';
 import { CarteMap } from '@/components/CarteMap';
+import { MessageVide } from '@/components/MessageVide';
 import { Pastille } from '@/components/Pastille';
 import { useLieux } from '@/hooks/useLieux';
 import { useFiltres } from '@/state/filtres';
@@ -14,7 +15,7 @@ import { colors, font, radius, shadow } from '@/theme';
 /** Écran 1 : carte des lieux autour de l'utilisateur. */
 export default function EcranCarte() {
   const insets = useSafeAreaInsets();
-  const { lieux, position } = useLieux();
+  const { lieux, position, erreur, nbRecus } = useLieux();
   const { filtres, setFiltres, tri, setTri } = useFiltres();
   const [recherche, setRecherche] = useState('');
   const [selectionId, setSelectionId] = useState<string | null>(null);
@@ -79,7 +80,7 @@ export default function EcranCarte() {
         {selection ? (
           <CarteLieu lieu={selection} variante="compacte" />
         ) : (
-          <Text style={styles.vide}>Aucun lieu ne correspond à vos filtres.</Text>
+          <MessageVide erreur={erreur} nbRecus={nbRecus} distanceMaxKm={filtres.distanceMaxKm} position={position} />
         )}
       </View>
     </View>

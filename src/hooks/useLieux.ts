@@ -29,7 +29,12 @@ export function useLieux() {
         setBruts(l);
         setErreur(null);
       })
-      .catch((e: Error) => !annule && setErreur(e.message))
+      .catch((e: Error) => {
+        if (annule) return;
+        // Ne pas garder les lieux d'une ancienne position : ils seraient filtrés et masqueraient l'erreur.
+        setBruts([]);
+        setErreur(e.message);
+      })
       .finally(() => !annule && setChargement(false));
     return () => {
       annule = true;
@@ -57,7 +62,7 @@ export function useLieux() {
       });
   }, [bruts, position, filtres, tri]);
 
-  return { lieux, position, autorisee, chargement, erreur };
+  return { lieux, position, autorisee, chargement, erreur, nbRecus: bruts.length };
 }
 
 /** Un lieu et ses avis publiés. `lieu` vaut `undefined` pendant le chargement, `null` s'il n'existe pas. */
