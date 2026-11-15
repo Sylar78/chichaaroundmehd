@@ -6,11 +6,13 @@ type Props = {
   erreur: string | null;
   nbRecus: number;
   distanceMaxKm: number;
+  /** Centre de la recherche : la position de l'utilisateur, ou le centre de la zone cherchée. */
   position: { latitude: number; longitude: number };
+  dansZone?: boolean;
 };
 
 /** Explique pourquoi la liste est vide : erreur de chargement, base vide autour de soi, ou filtres trop stricts. */
-export function MessageVide({ erreur, nbRecus, distanceMaxKm, position }: Props) {
+export function MessageVide({ erreur, nbRecus, distanceMaxKm, position, dansZone }: Props) {
   const coord = `${position.latitude.toFixed(4)}, ${position.longitude.toFixed(4)}`;
   return (
     <View style={styles.boite}>
@@ -18,11 +20,11 @@ export function MessageVide({ erreur, nbRecus, distanceMaxKm, position }: Props)
         {erreur
           ? `Impossible de charger les lieux : ${erreur}`
           : nbRecus === 0
-            ? `Aucun lieu enregistré à moins de ${distanceMaxKm} km de votre position.`
+            ? `Aucun lieu enregistré à moins de ${distanceMaxKm} km ${dansZone ? 'du centre de cette zone' : 'de votre position'}.`
             : 'Aucun lieu ne correspond à vos filtres.'}
       </Text>
       <Text style={styles.detail}>
-        Position : {coord} · {nbRecus} lieu{nbRecus > 1 ? 'x' : ''} reçu{nbRecus > 1 ? 's' : ''} de la base
+        {dansZone ? 'Centre de la zone' : 'Position'} : {coord} · {nbRecus} lieu{nbRecus > 1 ? 'x' : ''} reçu{nbRecus > 1 ? 's' : ''} de la base
       </Text>
     </View>
   );

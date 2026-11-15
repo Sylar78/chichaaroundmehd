@@ -9,13 +9,17 @@ import { CarteMap } from '@/components/CarteMap';
 import { MessageVide } from '@/components/MessageVide';
 import { Pastille } from '@/components/Pastille';
 import { useLieux } from '@/hooks/useLieux';
+import type { Coordonnees } from '@/lib/format';
 import { useFiltres } from '@/state/filtres';
 import { colors, font, radius, shadow } from '@/theme';
 
 /** Écran 1 : carte des lieux autour de l'utilisateur. */
 export default function EcranCarte() {
   const insets = useSafeAreaInsets();
-  const { lieux, position, erreur, nbRecus } = useLieux();
+  // Zone cherchée : `null` = autour de l'utilisateur. `zoneVisee` = centre où la carte a été déplacée, en attente d'un appui sur le bouton.
+  const [zoneCherchee, setZoneCherchee] = useState<Coordonnees | null>(null);
+  const [zoneVisee, setZoneVisee] = useState<Coordonnees | null>(null);
+  const { lieux, position, centre, erreur, nbRecus, chargement } = useLieux(zoneCherchee);
   const { filtres, setFiltres, tri, setTri } = useFiltres();
   const [recherche, setRecherche] = useState('');
   const [selectionId, setSelectionId] = useState<string | null>(null);
@@ -35,6 +39,7 @@ export default function EcranCarte() {
         selectionId={selection?.id}
         onSelect={setSelectionId}
         recentrerCle={recentrerCle}
+        onZoneDeplacee={setZoneVisee}
       />
 
       <View style={[styles.haut, { top: insets.top + 8 }]}>
@@ -63,7 +68,33 @@ export default function EcranCarte() {
         </ScrollView>
       </View>
 
-      <Pressable accessibilityRole="button" accessibilityLabel="Me recentrer" onPress={() => setRecentrerCle((c) => c + 1)} style={styles.recentrer}>
+      {zoneVisee && (
+        <View style={[styles.zone, { top: insets.top + 124 }]} pointerEvents="box-none">
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Rechercher dans cette zone"
+            onPress={() => {
+              setZoneCherchee(zoneVisee);
+              setZoneVisee(null);
+              setSelectionId(null);
+            }}
+            style={styles.boutonZone}>
+            <Ionicons name="search" size={16} color={colors.accent} />
+            <Text style={styles.texteZone}>Rechercher dans cette zone</Text>
+          </Pressable>
+        </View>
+      )}
+
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Me recentrer"
+        onPress={() => {
+          // Revenir à sa position, c'est aussi chercher de nouveau autour de soi.
+          setZoneCherchee(null);
+          setZoneVisee(null);
+          setRecentrerCle((c) => c + 1);
+        }}
+        style={styles.recentrer}>
         <Ionicons name="navigate-outline" size={22} color={colors.ink} />
       </Pressable>
 
@@ -71,7 +102,7 @@ export default function EcranCarte() {
         <View style={styles.poignee} />
         <View style={styles.enTete}>
           <Text style={styles.titre} accessibilityRole="header">
-            {visibles.length} lieu{visibles.length > 1 ? 'x' : ''} à proximité
+            {chargement ? 'Recherche…' : `${visibles.length} lieu${visibles.length > 1 ? 'x' : ''} ${zoneCherchee ? 'dans cette zone' : 'à proximité'}`}
           </Text>
           <Link href="/liste" style={styles.lien}>
             Tout voir
@@ -80,7 +111,7 @@ export default function EcranCarte() {
         {selection ? (
           <CarteLieu lieu={selection} variante="compacte" />
         ) : (
-          <MessageVide erreur={erreur} nbRecus={nbRecus} distanceMaxKm={filtres.distanceMaxKm} position={position} />
+          <MessageVide erreur={erreur} nbRecus={nbRecus} distanceMaxKm={filtres.distanceMaxKm} position={centre} dansZone={!!zoneCherchee} />
         )}
       </View>
     </View>
@@ -102,6 +133,18 @@ const styles = StyleSheet.create({
   },
   champ: { flex: 1, fontSize: 16, color: colors.ink },
   pastilles: { gap: 8, paddingVertical: 4 },
+  zone: { position: 'absolute', left: 0, right: 0, alignItems: 'center' },
+  boutonZone: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    height: 44,
+    paddingHorizontal: 18,
+    borderRadius: 22,
+    backgroundColor: colors.white,
+    ...shadow.soft,
+  },
+  texteZone: { fontSize: 15, fontWeight: font.semibold, color: colors.accent },
   recentrer: {
     position: 'absolute',
     right: 16,

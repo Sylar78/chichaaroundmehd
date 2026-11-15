@@ -14,12 +14,14 @@ export type CarteMapProps = {
   onSelect: (id: string) => void;
   /** Incrémenté pour demander de recentrer la carte sur `position`. */
   recentrerCle: number;
+  /** Appelé quand l'utilisateur a fini de déplacer ou de zoomer la carte, avec le nouveau centre. */
+  onZoneDeplacee?: (centre: Coordonnees) => void;
 };
 
 const DELTA = 0.03;
 
 /** Carte native (Apple Maps sur iOS, Google Maps sur Android). La version web est dans CarteMap.web.tsx. */
-export function CarteMap({ lieux, position, selectionId, onSelect, recentrerCle }: CarteMapProps) {
+export function CarteMap({ lieux, position, selectionId, onSelect, recentrerCle, onZoneDeplacee }: CarteMapProps) {
   const carte = useRef<MapView>(null);
 
   useEffect(() => {
@@ -36,7 +38,11 @@ export function CarteMap({ lieux, position, selectionId, onSelect, recentrerCle 
       style={StyleSheet.absoluteFill}
       initialRegion={{ ...position, latitudeDelta: DELTA, longitudeDelta: DELTA }}
       showsUserLocation
-      showsMyLocationButton={false}>
+      showsMyLocationButton={false}
+      // `isGesture` distingue le doigt de l'utilisateur d'un mouvement programmé (recentrage, région initiale).
+      onRegionChangeComplete={(region, details) => {
+        if (details?.isGesture) onZoneDeplacee?.({ latitude: region.latitude, longitude: region.longitude });
+      }}>
       {lieux.map((l) => {
         const actif = l.id === selectionId;
         return (

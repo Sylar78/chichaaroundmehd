@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import { chargerAvis, chargerLieu, chargerLieux } from '@/lib/donnees';
-import { distanceEnMetres, estOuvert } from '@/lib/format';
+import { distanceEnMetres, estOuvert, type Coordonnees } from '@/lib/format';
 import { useFiltres } from '@/state/filtres';
 import type { Avis, Lieu } from '@/types';
 
@@ -12,9 +12,12 @@ export type LieuAvecDistance = Lieu & { distance: number; ouvert: boolean };
 /**
  * Lieux filtrés et triés autour de l'utilisateur.
  * Source : Supabase s'il est configuré, sinon les données factices.
+ * Par défaut la recherche est centrée sur l'utilisateur ; `centreRecherche` la déplace (bouton « Rechercher dans cette zone »).
+ * Les distances affichées restent mesurées depuis l'utilisateur.
  */
-export function useLieux() {
+export function useLieux(centreRecherche?: Coordonnees | null) {
   const { position, autorisee } = usePosition();
+  const centre = centreRecherche ?? position;
   const { filtres, tri } = useFiltres();
   const [bruts, setBruts] = useState<Lieu[]>([]);
   const [chargement, setChargement] = useState(true);
@@ -23,7 +26,7 @@ export function useLieux() {
   useEffect(() => {
     let annule = false;
     setChargement(true);
-    chargerLieux(position, filtres.distanceMaxKm)
+    chargerLieux(centre, filtres.distanceMaxKm)
       .then((l) => {
         if (annule) return;
         setBruts(l);
@@ -39,7 +42,7 @@ export function useLieux() {
     return () => {
       annule = true;
     };
-  }, [position, filtres.distanceMaxKm]);
+  }, [centre, filtres.distanceMaxKm]);
 
   const lieux = useMemo<LieuAvecDistance[]>(() => {
     const maintenant = new Date();
@@ -47,7 +50,7 @@ export function useLieux() {
       .map((l) => ({ ...l, distance: distanceEnMetres(position, l), ouvert: estOuvert(l.horaires, maintenant) }))
       .filter(
         (l) =>
-          l.distance <= filtres.distanceMaxKm * 1000 &&
+          distanceEnMetres(centre, l) <= filtres.distanceMaxKm * 1000 &&
           l.note_moyenne >= filtres.noteMin &&
           filtres.niveauxPrix.includes(l.niveau_prix) &&
           (!filtres.ouvertMaintenant || l.ouvert) &&
@@ -60,9 +63,9 @@ export function useLieux() {
         if (tri === 'prix') return a.niveau_prix - b.niveau_prix || a.distance - b.distance;
         return a.distance - b.distance;
       });
-  }, [bruts, position, filtres, tri]);
+  }, [bruts, centre, position, filtres, tri]);
 
-  return { lieux, position, autorisee, chargement, erreur, nbRecus: bruts.length };
+  return { lieux, position, centre, autorisee, chargement, erreur, nbRecus: bruts.length };
 }
 
 /** Un lieu et ses avis publiés. `lieu` vaut `undefined` pendant le chargement, `null` s'il n'existe pas. */
